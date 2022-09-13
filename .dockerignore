@@ -1,0 +1,32 @@
+# IDE
+.vscode/
+
+# git
+.git/
+
+# CACHE
+**/__pycache__/**
+.pytest_cache
+.testmondata
+
+# DATASET
+**/DATASET/**
+
+# MODELS
+*.zip
+*.pt.zip
+*.pt
+*.pth
+*.onnx
+
+# ETC
+env/
+static/
+docker-compose.yaml
+*.ipynb
+
+# LOG
+logs/
+
+# DEV
+debug.py

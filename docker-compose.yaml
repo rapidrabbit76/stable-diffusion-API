@@ -1,0 +1,31 @@
+version: "3.7"
+
+services:
+  stable-diffusion:
+    build:
+      context: .
+      dockerfile: docker/api/Dockerfile
+
+    restart: unless-stopped
+    ports:
+      - 3000:3000
+    expose:
+      - 3000
+    volumes:
+      - /home/{USERNAME}/.cache/huggingface:/root/.cache/huggingface
+      - ./static:/app/static
+    environment:
+      TZ: Asia/Seoul
+      MB_BATCH_SIZE: 2
+      CUDA_DEVICE: cuda
+      HUGGINGFACE_TOKEN: { YOUR HUGGINGFACE ACCESS TOKEN }
+      IMAGESERVER_URL: http://localhost:3000/images
+      SAVE_DIR: static
+
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: [ '0' ]
+              capabilities: [ gpu ]
