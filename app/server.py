@@ -6,21 +6,17 @@ from fastapi.middleware.cors import CORSMiddleware
 
 import api
 from core.settings import get_settings
-from core.dependencies import models
 
 env = get_settings()
 
 
 def init_router(app: FastAPI):
     app.mount(
-        '/images',
+        "/images",
         StaticFiles(directory=env.SAVE_DIR),
-        name='result image',
+        name="result image",
     )
-    app.include_router(
-        api.StableDiffusionRouter,
-        prefix="/stable-diffusion",
-    )
+    app.include_router(api.StableDiffusionRouter)
     app.router.redirect_slashes = False
 
 
@@ -48,7 +44,7 @@ def init_middleware(app: FastAPI):
 def init_settings(app: FastAPI):
     @app.on_event("startup")
     def startup_event():
-        pass
+        from core.dependencies import models
 
     @app.on_event("shutdown")
     def shutdown_event():
