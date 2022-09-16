@@ -3,24 +3,73 @@
 UNOFFICIAL, [Stable-Diffusion](https://github.com/CompVis/stable-diffusion) api using FastAPI
 
 # Samples
-TODO
 
+|           Text2Image-01            |           Text2Image-02            |
+| :--------------------------------: | :--------------------------------: |
+| ![](./src/image/text2image/1.png)  | ![](./src/image/text2image/2.png)  |
+|           Image2Image-01           |           Image2Image-02           |
+| ![](./src/image/image2image/1.png) | ![](./src/image/image2image/2.png) |
+|             Inpaint-01             |             Inpaint-02             |
+|   ![](./src/image/inpaint/0.png)   |
+|   ![](./src/image/inpaint/1.png)   |   ![](./src/image/inpaint/2.png)   |
 
 # Requirements
+
+## API
+
+```txt
+fastapi[all]==0.80.0
+fastapi-restful==0.4.3
+fastapi-health==0.4.0
+service-streamer==0.1.2
+pydantic==1.9.2
+diffusers==0.3.0
+transformers==4.19.2
+scipy
+ftfy
+```
+
+## Frontend
+```txt
+streamlit==1.12.2
+requests==2.27.1 
+requests-toolbelt==0.9.1 
+pydantic==1.8.2
+streamlit-drawable-canvas==0.9.2
+```
 
 
 # API
 
-## /stable-diffusion
+## /text2image
+create image from input prompt
 
 inputs:
 
     - prompt(str): text prompt
     - num_images(int): number of images
     - guidance_scale(float): guidance scale for stable-diffusion
-    - num_inference_steps(int): diffusion itr count
     - height(int): image height
     - width(int): image width
+    - seed(int): generator seed
+
+outputs:
+
+    - prompt(str): input text prompt
+    - task_id(str): uuid4 hex string
+    - image_urls(str): generated images url
+
+
+## /image2image
+create image from input image
+
+inputs:
+
+    - prompt(str): text prompt
+    - init_image(imagefile): init image for i2i task
+    - num_images(int): number of images
+    - guidance_scale(float): guidance scale for stable-diffusion
+    - seed(int): generator seed
 
 outputs:
 
@@ -89,13 +138,9 @@ python3 -m uvicorn app.server:app \
 
 # RUN using Docker (docker-compose)
 
-## 1. Image Build or pull
+## 1. Image Build 
 ```bash
 docker-compose build
-# or image pull (docker-compose)
-docker-compose pull
-# or image pull from docker hub
-docker pull ys2lee/stable-difussion-api:latest
 ```
 
 ## 2. downlaod and caching huggingface model
@@ -111,7 +156,7 @@ python huggingface_model_download.py
 version: "3.7"
 
 services:
-  stable-diffusion:
+  api:
     ...
     volumes:
       # mount huggingface model cache dir path to container root user home dir
@@ -124,6 +169,8 @@ services:
 
     deploy:
       ...
+  frontend:
+    ...
 ```
 
 ## 4. Container RUN
@@ -132,20 +179,6 @@ docker-compose up -d
 ```
 
 
-
-
-
-
-## Curl CMD
-```java
-TODO
-```
-
-
-## Streamlit demo
-```java
-TODO
-```
 
 
 ## References
