@@ -5,7 +5,7 @@ if __name__ == "__main__":
     app = "app.server:app"
     uvicorn.run(
         app,
-        port=8000,
+        port=3000,
         host="0.0.0.0",
         workers=1,
     )

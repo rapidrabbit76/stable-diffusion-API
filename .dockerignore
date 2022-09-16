@@ -30,3 +30,6 @@ logs/
 
 # DEV
 debug.py
+
+# frontend
+frontend/
