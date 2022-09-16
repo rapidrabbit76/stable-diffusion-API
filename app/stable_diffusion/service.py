@@ -91,6 +91,12 @@ class StableDiffusionService:
         seed: int = 203,
     ) -> T.List[Image.Image]:
         device = env.CUDA_DEVICE
+        origin_size = init_image.size
+        w, h = origin_size
+        w, h = map(lambda x: x - x % 64, (w, h))
+
+        init_image = init_image.resize((w, h), resample=Image.LANCZOS)
+
         generator = self.generator.manual_seed(seed)
         prompt = [prompt] * num_images
         prompt = data_to_batch(prompt, batch_size=env.MB_BATCH_SIZE)
@@ -109,6 +115,13 @@ class StableDiffusionService:
             if device != "cpu":
                 torch.cuda.empty_cache()
             images += output
+
+        if origin_size == images[0].size:
+            return images
+
+        for i, image in enumerate(images):
+            images[i] = image.resize(origin_size)
+
         return images
 
     @torch.inference_mode()
@@ -123,6 +136,13 @@ class StableDiffusionService:
         guidance_scale: float = 8.5,
         seed: int = 203,
     ) -> T.List[Image.Image]:
+
+        origin_size = init_image.size
+        w, h = origin_size
+        w, h = map(lambda x: x - x % 64, (w, h))
+        mask_image = mask_image.resize((w, h), resample=Image.NEAREST)
+        init_image = init_image.resize((w, h), resample=Image.LANCZOS)
+
         device = env.CUDA_DEVICE
         generator = self.generator.manual_seed(seed)
         prompt = [prompt] * num_images
@@ -142,6 +162,13 @@ class StableDiffusionService:
             if device != "cpu":
                 torch.cuda.empty_cache()
             images += output
+
+        if origin_size == images[0].size:
+            return images
+
+        for i, image in enumerate(images):
+            images[i] = image.resize(origin_size)
+
         return images
 
     @staticmethod
