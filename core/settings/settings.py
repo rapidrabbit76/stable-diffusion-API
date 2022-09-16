@@ -5,7 +5,7 @@ from pydantic import BaseSettings
 
 
 class ModelSetting(BaseSettings):
-    MODEL_ID: str = 'CompVis/stable-diffusion-v1-4'
+    MODEL_ID: str = "CompVis/stable-diffusion-v1-4"
 
 
 class DeviceSettings(BaseSettings):
@@ -18,12 +18,12 @@ class MicroBatchSettings(BaseSettings):
 
 
 class Settings(
-        ModelSetting,
-        DeviceSettings,
-        MicroBatchSettings,
+    ModelSetting,
+    DeviceSettings,
+    MicroBatchSettings,
 ):
     HUGGINGFACE_TOKEN: str
-    IMAGESERVER_URL: str  
-    SAVE_DIR: str = 'static'
+    IMAGESERVER_URL: str
+    SAVE_DIR: str = "static"
 
     CORS_ALLOW_ORIGINS: T.List[str] = ["*"]

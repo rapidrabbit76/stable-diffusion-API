@@ -3,7 +3,9 @@ from typing import List, Optional, Union
 from transformers import CLIPTextModel, CLIPTokenizer
 from diffusers import DDIMScheduler, PNDMScheduler, LMSDiscreteScheduler
 from diffusers import AutoencoderKL, UNet2DConditionModel
-from diffusers.pipelines.stable_diffusion.pipeline_stable_diffusion import DiffusionPipeline
+from diffusers.pipelines.stable_diffusion.pipeline_stable_diffusion import (
+    DiffusionPipeline,
+)
 import torch
 import PIL
 import numpy as np
@@ -11,8 +13,7 @@ import numpy as np
 
 def preprocess(image) -> torch.Tensor:
     w, h = image.size
-    w, h = map(lambda x: x - x % 32,
-               (w, h))  # resize to integer multiple of 32
+    w, h = map(lambda x: x - x % 32, (w, h))  # resize to integer multiple of 32
     image = image.resize((w, h), resample=PIL.Image.LANCZOS)
     image = np.array(image).astype(np.float32) / 255.0
     image = image[None].transpose(0, 3, 1, 2)
@@ -77,7 +78,8 @@ class StableDiffusionImg2ImgPipeline(DiffusionPipeline):
 
         # set timesteps
         accepts_offset = "offset" in set(
-            inspect.signature(self.scheduler.set_timesteps).parameters.keys())
+            inspect.signature(self.scheduler.set_timesteps).parameters.keys()
+        )
         extra_set_kwargs = {}
         offset = 0
         if accepts_offset:
@@ -90,8 +92,9 @@ class StableDiffusionImg2ImgPipeline(DiffusionPipeline):
             init_image = preprocess(init_image)
 
         # encode the init image into latents and scale the latents
-        init_latent_dist = self.vae.encode(init_image.to(
-            self.device)).latent_dist
+        init_latent_dist = self.vae.encode(
+            init_image.to(self.device)
+        ).latent_dist
         init_latents = init_latent_dist.sample(generator=generator)
         init_latents = 0.18215 * init_latents
 
@@ -102,22 +105,24 @@ class StableDiffusionImg2ImgPipeline(DiffusionPipeline):
         init_timestep = int(num_inference_steps * strength) + offset
         init_timestep = min(init_timestep, num_inference_steps)
         if isinstance(self.scheduler, LMSDiscreteScheduler):
-            timesteps = torch.tensor([num_inference_steps - init_timestep] *
-                                     batch_size,
-                                     dtype=torch.long,
-                                     device=self.device)
+            timesteps = torch.tensor(
+                [num_inference_steps - init_timestep] * batch_size,
+                dtype=torch.long,
+                device=self.device,
+            )
         else:
             timesteps = self.scheduler.timesteps[-init_timestep]
-            timesteps = torch.tensor([timesteps] * batch_size,
-                                     dtype=torch.long,
-                                     device=self.device)
+            timesteps = torch.tensor(
+                [timesteps] * batch_size, dtype=torch.long, device=self.device
+            )
 
         # add noise to latents using the timesteps
-        noise = torch.randn(init_latents.shape,
-                            generator=generator,
-                            device=self.device)
-        init_latents = self.scheduler.add_noise(init_latents, noise,
-                                                timesteps).to(self.device)
+        noise = torch.randn(
+            init_latents.shape, generator=generator, device=self.device
+        )
+        init_latents = self.scheduler.add_noise(
+            init_latents, noise, timesteps
+        ).to(self.device)
 
         # get prompt text embeddings
         text_input = self.tokenizer(
@@ -128,7 +133,8 @@ class StableDiffusionImg2ImgPipeline(DiffusionPipeline):
             return_tensors="pt",
         )
         text_embeddings = self.text_encoder(
-            text_input.input_ids.to(self.device))[0]
+            text_input.input_ids.to(self.device)
+        )[0]
 
         # here `guidance_scale` is defined analog to the guidance weight `w` of equation (2)
         # of the Imagen paper: https://arxiv.org/pdf/2205.11487.pdf . `guidance_scale = 1`
@@ -137,12 +143,15 @@ class StableDiffusionImg2ImgPipeline(DiffusionPipeline):
         # get unconditional embeddings for classifier free guidance
         if do_classifier_free_guidance:
             max_length = text_input.input_ids.shape[-1]
-            uncond_input = self.tokenizer([""] * batch_size,
-                                          padding="max_length",
-                                          max_length=max_length,
-                                          return_tensors="pt")
+            uncond_input = self.tokenizer(
+                [""] * batch_size,
+                padding="max_length",
+                max_length=max_length,
+                return_tensors="pt",
+            )
             uncond_embeddings = self.text_encoder(
-                uncond_input.input_ids.to(self.device))[0]
+                uncond_input.input_ids.to(self.device)
+            )[0]
 
             # For classifier free guidance, we need to do two forward passes.
             # Here we concatenate the unconditional and text embeddings into a single batch
@@ -154,7 +163,8 @@ class StableDiffusionImg2ImgPipeline(DiffusionPipeline):
         # eta corresponds to η in DDIM paper: https://arxiv.org/abs/2010.02502
         # and should be between [0, 1]
         accepts_eta = "eta" in set(
-            inspect.signature(self.scheduler.step).parameters.keys())
+            inspect.signature(self.scheduler.step).parameters.keys()
+        )
         extra_step_kwargs = {}
         if accepts_eta:
             extra_step_kwargs["eta"] = eta
@@ -163,39 +173,48 @@ class StableDiffusionImg2ImgPipeline(DiffusionPipeline):
 
         t_start = max(num_inference_steps - init_timestep + offset, 0)
         for i, t in enumerate(
-                self.progress_bar(self.scheduler.timesteps[t_start:])):
+            self.progress_bar(self.scheduler.timesteps[t_start:])
+        ):
             t_index = t_start + i
 
             # expand the latents if we are doing classifier free guidance
-            latent_model_input = torch.cat(
-                [latents] * 2) if do_classifier_free_guidance else latents
+            latent_model_input = (
+                torch.cat([latents] * 2)
+                if do_classifier_free_guidance
+                else latents
+            )
 
             # if we use LMSDiscreteScheduler, let's make sure latents are mulitplied by sigmas
             if isinstance(self.scheduler, LMSDiscreteScheduler):
                 sigma = self.scheduler.sigmas[t_index]
                 # the model input needs to be scaled to match the continuous ODE formulation in K-LMS
-                latent_model_input = latent_model_input / ((sigma**2 + 1)**0.5)
+                latent_model_input = latent_model_input / (
+                    (sigma**2 + 1) ** 0.5
+                )
                 latent_model_input = latent_model_input.to(self.unet.dtype)
                 t = t.to(self.unet.dtype)
 
             # predict the noise residual
             noise_pred = self.unet(
-                latent_model_input, t,
-                encoder_hidden_states=text_embeddings).sample
+                latent_model_input, t, encoder_hidden_states=text_embeddings
+            ).sample
 
             # perform guidance
             if do_classifier_free_guidance:
                 noise_pred_uncond, noise_pred_text = noise_pred.chunk(2)
                 noise_pred = noise_pred_uncond + guidance_scale * (
-                    noise_pred_text - noise_pred_uncond)
+                    noise_pred_text - noise_pred_uncond
+                )
 
             # compute the previous noisy sample x_t -> x_t-1
             if isinstance(self.scheduler, LMSDiscreteScheduler):
-                latents = self.scheduler.step(noise_pred, t_index, latents,
-                                              **extra_step_kwargs).prev_sample
+                latents = self.scheduler.step(
+                    noise_pred, t_index, latents, **extra_step_kwargs
+                ).prev_sample
             else:
-                latents = self.scheduler.step(noise_pred, t, latents,
-                                              **extra_step_kwargs).prev_sample
+                latents = self.scheduler.step(
+                    noise_pred, t, latents, **extra_step_kwargs
+                ).prev_sample
 
         # scale and decode the image latents with vae
         latents = 1 / 0.18215 * latents

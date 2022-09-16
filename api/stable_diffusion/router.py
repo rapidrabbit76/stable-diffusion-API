@@ -117,7 +117,7 @@ class StableDiffusion:
     ):
         init_image = read_image(init_image)
         mask_image = read_image(mask_image)
-        
+
         task_id = uuid4().hex
         images = self.svc.inpaint(
             prompt=prompt,

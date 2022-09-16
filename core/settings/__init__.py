@@ -4,5 +4,5 @@ from .settings import Settings
 
 @lru_cache()
 def get_settings() -> Settings:
-    setting = Settings('env/dev.env')
+    setting = Settings("env/dev.env")
     return setting
