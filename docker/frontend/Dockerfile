@@ -12,8 +12,8 @@ RUN pip install --no-cache-dir \
     requests==2.27.1 \ 
     requests-toolbelt==0.9.1 
 
-COPY req.txt .
-RUN pip install -r req.txt --no-cache-dir
+COPY requirements.txt .
+RUN pip install -r requirements.txt --no-cache-dir
 
 COPY . /app
 
