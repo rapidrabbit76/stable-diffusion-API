@@ -10,7 +10,7 @@ UNOFFICIAL, [Stable-Diffusion](https://github.com/CompVis/stable-diffusion) api 
 |           Image2Image-01           |           Image2Image-02           |
 | ![](./src/image/image2image/1.png) | ![](./src/image/image2image/2.png) |
 |             Inpaint-01             |             Inpaint-02             |
-|   ![](./src/image/inpaint/0.png)   |
+|   ![](./src/image/inpaint/0.png)   |   ![](./src/image/inpaint/0.png)   |
 |   ![](./src/image/inpaint/1.png)   |   ![](./src/image/inpaint/2.png)   |
 
 # Requirements

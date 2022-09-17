@@ -1,4 +1,4 @@
-import os
+import sys
 import typing as T
 
 from pydantic import BaseSettings
@@ -14,7 +14,8 @@ class DeviceSettings(BaseSettings):
 
 
 class MicroBatchSettings(BaseSettings):
-    MB_BATCH_SIZE = 2
+    MB_BATCH_SIZE = 1
+    MB_TIMEOUT = 120
 
 
 class Settings(

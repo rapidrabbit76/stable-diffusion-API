@@ -71,25 +71,6 @@ def build_inpaint_pipeline() -> StableDiffusionInpaintPipeline:
     unet = build_unet()
     tokenizer = build_tokenizer()
     text_encoder = build_text_encoder()
-    scheduler = build_scheduler()
-
-    logger.info("stable diffusion inpaint pipeline loading...")
-    pipe = StableDiffusionInpaintPipeline(
-        vae=vae,
-        text_encoder=text_encoder,
-        tokenizer=tokenizer,
-        unet=unet,
-        scheduler=scheduler,
-    )
-    return pipe
-
-
-@lru_cache(maxsize=1)
-def build_inpaint_pipeline() -> StableDiffusionPipeline:
-    vae = build_vae()
-    unet = build_unet()
-    tokenizer = build_tokenizer()
-    text_encoder = build_text_encoder()
     scheduler = PNDMScheduler(
         beta_start=0.00085, beta_end=0.012, beta_schedule="scaled_linear"
     )

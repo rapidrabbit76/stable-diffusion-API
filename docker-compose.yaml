@@ -16,10 +16,11 @@ services:
       - ./static:/app/static
     environment:
       TZ: Asia/Seoul
-      MB_BATCH_SIZE: 2
+      MB_BATCH_SIZE: 1
       CUDA_DEVICE: cuda
       HUGGINGFACE_TOKEN: { YOUR HUGGINGFACE ACCESS TOKEN }
       IMAGESERVER_URL: http://localhost:3000/images
+      MB_TIMEOUT: 120
       SAVE_DIR: static
 
     deploy:
