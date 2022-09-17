@@ -2,6 +2,7 @@ version: "3.7"
 
 services:
   api:
+    image: ys2lee/stable-diffusion-api:${TAG:-latest}
     build:
       context: .
       dockerfile: docker/api/Dockerfile
@@ -12,13 +13,13 @@ services:
     expose:
       - 3000
     volumes:
-      - /home/{USERNAME}/.cache/huggingface:/root/.cache/huggingface
+      - /home/USERNAME/.cache/huggingface:/root/.cache/huggingface
       - ./static:/app/static
     environment:
       TZ: Asia/Seoul
       MB_BATCH_SIZE: 1
       CUDA_DEVICE: cuda
-      HUGGINGFACE_TOKEN: { YOUR HUGGINGFACE ACCESS TOKEN }
+      HUGGINGFACE_TOKEN: ${TOKEN:-YOUR-HUGGINGFACE-ACCESS-TOKEN}
       IMAGESERVER_URL: http://localhost:3000/images
       MB_TIMEOUT: 120
       SAVE_DIR: static
@@ -35,6 +36,7 @@ services:
     depends_on:
       - api
 
+    image: ys2lee/stable-diffusion-streamlit:${TAG:-latest}
     build:
       context: ./frontend
       dockerfile: ../docker/frontend/Dockerfile

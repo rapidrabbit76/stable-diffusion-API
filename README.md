@@ -92,13 +92,14 @@ outputs:
 | MODEL_ID           | CompVis/stable-diffusion-v1-4 | tagger embedding model part                       |
 | CUDA_DEVICE        | "cpu"                         | target cuda device                                |
 | CUDA_DEVICES       | [0]                           | visible cuda device                               |
-| MB_BATCH_SIZE      | 64                            | Micro Batch: MAX Batch size                       |
+| MB_BATCH_SIZE      | 1                             | Micro Batch: MAX Batch size                       |
+| MB_TIMEOUT         | 120                           | Micro Batch: timeout sec                          |
 | HUGGINGFACE_TOKEN  | None                          | huggingface access token                          |
 | IMAGESERVER_URL    | None                          | result image base url                             |
 | SAVE_DIR           | static                        | result image save dir                             |
 | CORS_ALLOW_ORIGINS | [*]                           | cross origin resource sharing setting for FastAPI |
 
-# RUN from code 
+# RUN from code (API)
 
 ## 1. install python Requirements
 ```bash
@@ -133,6 +134,23 @@ python3 -m uvicorn app.server:app \
     --host 0.0.0.0 \
     --port 3000 \
     --workers 1 
+```
+
+# RUN from code (frontend)
+
+## 1. install python Requirements
+```bash
+pip install \
+    streamlit==1.12.2 \
+    requests==2.27.1 \
+    requests-toolbelt==0.9.1 \
+    pydantic==1.8.2 \
+    streamlit-drawable-canvas==0.9.2
+```
+
+## 2. RUN streamlit frontend
+```bash
+streamlit run inpaint.py
 ```
 
 
@@ -175,7 +193,11 @@ services:
 
 ## 4. Container RUN
 ```bash
-docker-compose up -d
+docker-compose up -d 
+# or API only
+docker-compsoe up -d  api
+# or frontend only
+docker-compsoe up -d  frontend
 ```
 
 
