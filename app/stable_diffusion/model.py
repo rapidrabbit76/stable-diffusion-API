@@ -88,15 +88,17 @@ def build_inpaint_pipeline() -> StableDiffusionInpaintPipeline:
 
 @lru_cache(maxsize=1)
 def build_vae() -> AutoencoderKL:
+    model_id = env.MODEL_ID
+    device = env.CUDA_DEVICE
     logger.info("stable diffusion model VAE loading...")
     vae = AutoencoderKL.from_pretrained(
-        "CompVis/stable-diffusion-v1-4",
+        model_id,
         subfolder="vae",
         revision="fp16",
         torch_dtype=torch.float16,
         use_auth_token=env.HUGGINGFACE_TOKEN,
     )
-    vae = vae.to(env.CUDA_DEVICE)
+    vae = vae.to(device)
     return vae
 
 
