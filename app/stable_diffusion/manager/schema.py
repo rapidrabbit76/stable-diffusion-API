@@ -9,7 +9,7 @@ class Text2ImageTask(BaseModel):
     guidance_scale: float = Field(..., ge=0.0)
     height: int
     width: int
-    seed: int = Field(..., gt=0)
+    seed: T.Optional[int] = Field(..., gt=0)
 
     @validator("height", "width")
     def size_constraint(cls, size):
@@ -25,7 +25,7 @@ class Image2ImageTask(BaseModel):
     strength: float = Field(..., ge=0.0, le=1.0)
     num_inference_steps: int = Field(..., gt=0)
     guidance_scale: float = Field(..., ge=0.0)
-    seed: int = Field(..., gt=0)
+    seed: T.Optional[int] = Field(..., gt=0)
 
 
 class InpaintTask(BaseModel):
@@ -35,4 +35,4 @@ class InpaintTask(BaseModel):
     strength: float = Field(..., ge=0.0, le=1.0)
     num_inference_steps: int = Field(..., gt=0)
     guidance_scale: float = Field(..., ge=0.0)
-    seed: int = Field(..., gt=0)
+    seed: T.Optional[int] = Field(..., gt=0)

@@ -1,6 +1,8 @@
 from functools import lru_cache
 import typing as T
 import torch
+import sys
+from random import randint
 from service_streamer import ThreadedStreamer
 from app.stable_diffusion.model import (
     build_text2image_pipeline,
@@ -13,7 +15,6 @@ from app.stable_diffusion.manager.schema import (
     Image2ImageTask,
 )
 from core.settings import get_settings
-from core.decorator.singleton import singleton
 
 env = get_settings()
 
@@ -24,7 +25,6 @@ _StableDiffusionTask = T.Union[
 ]
 
 
-@singleton
 class StableDiffusionManager:
     def __init__(self):
         self.text2image = build_text2image_pipeline()
@@ -44,9 +44,11 @@ class StableDiffusionManager:
             images = self.predict_inpaint(task)
         return [images]
 
-    def _get_generator(self, task, device):
+    def _get_generator(self, task: _StableDiffusionTask, device: str):
         generator = torch.Generator(device=device)
-        generator.manual_seed(task.seed)
+        seed = task.seed
+        seed = seed if seed else randint(1, sys.maxsize)
+        generator.manual_seed(seed)
         return generator
 
     def predict_text2image(self, task: Text2ImageTask):
