@@ -1,1 +1,1 @@
-from .router import router as StableDiffusionRouter
+from .router import router 
