@@ -28,3 +28,6 @@ class Settings(
     SAVE_DIR: str = "static"
 
     CORS_ALLOW_ORIGINS: T.List[str] = ["*"]
+    CORS_CREDENTIALS: bool = True
+    CORS_ALLOW_METHODS: T.List[str] = ["*"]
+    CORS_ALLOW_HEADERS: T.List[str] = ["*"]

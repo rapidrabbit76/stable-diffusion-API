@@ -61,6 +61,7 @@ class StableDiffusionImg2ImgPipeline(DiffusionPipeline):
         guidance_scale: Optional[float] = 7.5,
         eta: Optional[float] = 0.0,
         generator: Optional[torch.Generator] = None,
+        **kwargs,
     ):
         if isinstance(prompt, str):
             batch_size = 1
