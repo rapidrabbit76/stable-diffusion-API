@@ -6,3 +6,6 @@ from .settings import Settings
 def get_settings() -> Settings:
     setting = Settings("env/dev.env")
     return setting
+
+
+env = get_settings()

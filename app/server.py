@@ -1,13 +1,12 @@
-from datetime import datetime
 from fastapi.staticfiles import StaticFiles
+import typing as T
 
 from fastapi import FastAPI, Response
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware import Middleware
 
 import api
-from core.settings import get_settings
-
-env = get_settings()
+from core.settings import env
 
 
 def init_router(app: FastAPI):
@@ -17,28 +16,30 @@ def init_router(app: FastAPI):
         name="result image",
     )
     app.include_router(api.StableDiffusionRouter)
+    app.include_router(api.HomeRouter)
     app.router.redirect_slashes = False
 
 
 def create_app() -> FastAPI:
-    app = FastAPI(redoc_url=None)
-
-    init_cors(app)
-    init_middleware(app)
+    app = FastAPI(
+        redoc_url=None,
+        middleware=init_middleware(),
+    )
     init_router(app)
-    init_settings(app)
     return app
 
 
-def init_cors(app: FastAPI):
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=env.CORS_ALLOW_ORIGINS,
-    )
-
-
-def init_middleware(app: FastAPI):
-    pass
+def init_middleware() -> T.List[Middleware]:
+    middleware = [
+        Middleware(
+            CORSMiddleware,
+            allow_origins=env.CORS_ALLOW_ORIGINS,
+            allow_credentials=env.CORS_CREDENTIALS,
+            allow_methods=env.CORS_ALLOW_METHODS,
+            allow_headers=env.CORS_ALLOW_HEADERS,
+        ),
+    ]
+    return middleware
 
 
 def init_settings(app: FastAPI):
@@ -50,12 +51,6 @@ def init_settings(app: FastAPI):
     def shutdown_event():
         pass
 
-    @app.get("/")
-    async def index():
-        """ELB check"""
-        current_time = datetime.utcnow()
-        msg = f"Notification API (UTC: {current_time.strftime('%Y.%m.%d %H:%M:%S')})"
-        return Response(msg)
-
 
 app = create_app()
+init_settings(app)
