@@ -107,9 +107,7 @@ class StableDiffusionService:
         return images
 
     @classmethod
-    def postprocess(
-        cls, images: T.List[Image.Image], origin_size: T.Tuple[int, int]
-    ):
+    def postprocess(cls, images: T.List[Image.Image], origin_size: T.Tuple[int, int]):
         if origin_size == images[0].size:
             return images
         for i, image in enumerate(images):

@@ -132,9 +132,7 @@ def build_text_encoder():
     device = env.CUDA_DEVICE
 
     logger.info("stable diffusion model text encoder loading...")
-    text_encoder = CLIPTextModel.from_pretrained(
-        "openai/clip-vit-large-patch14"
-    )
+    text_encoder = CLIPTextModel.from_pretrained("openai/clip-vit-large-patch14")
     text_encoder = text_encoder.to(device)
     return text_encoder
 

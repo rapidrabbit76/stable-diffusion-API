@@ -23,7 +23,7 @@ def main():
         value="A fantasy landscape, trending on artstation",
         key="image2image-prompt",
     )
-    
+
     negative_prompt = st.text_area(
         label="Negative Text Prompt",
         placeholder="Text Prompt",

@@ -26,9 +26,7 @@ class StableDiffusion:
         prompt: str = Form(),
         negative_prompt: str = Form(default=""),
         num_images: int = Form(1, description="num images", ge=1, le=8),
-        guidance_scale: float = Form(
-            7.5, description="guidance_scale", gt=0, le=20
-        ),
+        guidance_scale: float = Form(7.5, description="guidance_scale", gt=0, le=20),
         height: int = Form(512, description="result height"),
         width: int = Form(512, description="result width"),
         seed: int = Depends(random_seed),
@@ -71,9 +69,7 @@ class StableDiffusion:
         init_image: UploadFile = File(...),
         num_images: int = Form(1, description="num images", ge=1, le=8),
         strength: float = Form(0.8, ge=0, le=1.0),
-        guidance_scale: float = Form(
-            7.5, description="guidance_scale", gt=0, le=20
-        ),
+        guidance_scale: float = Form(7.5, description="guidance_scale", gt=0, le=20),
         seed: int = Depends(random_seed),
     ):
         init_image = read_image(init_image)
@@ -117,9 +113,7 @@ class StableDiffusion:
         mask_image: UploadFile = File(...),
         num_images: int = Form(1, description="num images", ge=1, le=8),
         strength: float = Form(0.8, ge=0, le=1.0),
-        guidance_scale: float = Form(
-            7.5, description="guidance_scale", gt=0, le=20
-        ),
+        guidance_scale: float = Form(7.5, description="guidance_scale", gt=0, le=20),
         seed: int = Depends(random_seed),
     ):
         init_image = read_image(init_image)

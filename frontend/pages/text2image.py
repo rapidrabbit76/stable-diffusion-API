@@ -48,9 +48,7 @@ def main():
         height = st.select_slider(
             "Height", options=[128, 256, 512, 768, 1024], value=512
         )
-        width = st.select_slider(
-            "Width", options=[128, 256, 512, 768, 1024], value=512
-        )
+        width = st.select_slider("Width", options=[128, 256, 512, 768, 1024], value=512)
         seed = st.number_input("Seed", value=203)
 
         summit = st.form_submit_button("Predict")
