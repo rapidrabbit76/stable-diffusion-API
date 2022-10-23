@@ -9,6 +9,7 @@ from diffusers.pipelines.stable_diffusion.pipeline_stable_diffusion import (
 import torch
 import PIL
 import numpy as np
+from .types import StableDiffusionCallback
 
 
 def preprocess_image(image):
@@ -76,6 +77,7 @@ class StableDiffusionInpaintPipeline(DiffusionPipeline):
         guidance_scale: Optional[float] = 7.5,
         eta: Optional[float] = 0.0,
         generator: Optional[torch.Generator] = None,
+        callbacks: Optional[List[StableDiffusionCallback]] = None,
         **kwargs,
     ):
         if isinstance(prompt, str):
@@ -157,10 +159,12 @@ class StableDiffusionInpaintPipeline(DiffusionPipeline):
         # get unconditional embeddings for classifier free guidance
         if do_classifier_free_guidance:
             max_length = text_input.input_ids.shape[-1]
-            uncond_input = self.tokenizer(negative_prompt,
-                                          padding="max_length",
-                                          max_length=max_length,
-                                          return_tensors="pt",)
+            uncond_input = self.tokenizer(
+                negative_prompt,
+                padding="max_length",
+                max_length=max_length,
+                return_tensors="pt",
+            )
             uncond_embeddings = self.text_encoder(
                 uncond_input.input_ids.to(self.device)
             )[0]
@@ -206,6 +210,15 @@ class StableDiffusionInpaintPipeline(DiffusionPipeline):
                 init_latents_orig, noise, t
             )
             latents = (init_latents_proper * mask) + (latents * (1 - mask))
+
+            if callbacks is None:
+                continue
+
+            for custom_callback in callbacks:
+                custom_callback(
+                    latents=latents,
+                    noise_pred=noise_pred,
+                )
 
         # scale and decode the image latents with vae
         latents = 1 / 0.18215 * latents

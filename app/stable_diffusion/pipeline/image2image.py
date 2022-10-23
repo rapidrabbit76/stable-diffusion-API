@@ -6,9 +6,12 @@ from diffusers import AutoencoderKL, UNet2DConditionModel
 from diffusers.pipelines.stable_diffusion.pipeline_stable_diffusion import (
     DiffusionPipeline,
 )
+
 import torch
 import PIL
 import numpy as np
+
+from .types import StableDiffusionCallback
 
 
 def preprocess(image) -> torch.Tensor:
@@ -62,6 +65,7 @@ class StableDiffusionImg2ImgPipeline(DiffusionPipeline):
         guidance_scale: Optional[float] = 7.5,
         eta: Optional[float] = 0.0,
         generator: Optional[torch.Generator] = None,
+        callbacks: Optional[List[StableDiffusionCallback]] = None,
         **kwargs,
     ):
         if isinstance(prompt, str):
@@ -218,6 +222,14 @@ class StableDiffusionImg2ImgPipeline(DiffusionPipeline):
                     noise_pred, t, latents, **extra_step_kwargs
                 ).prev_sample
 
+            if callbacks is None:
+                continue
+
+            for custom_callback in callbacks:
+                custom_callback(
+                    latents=latents,
+                    noise_pred=noise_pred,
+                )
         # scale and decode the image latents with vae
         latents = 1 / 0.18215 * latents
         image = self.vae.decode(latents.to(self.vae.dtype)).sample
