@@ -18,10 +18,16 @@ URL = os.path.join(env.API_URL, Task.IMAGE2IMAGE)
 def main():
     st.title(f"{env.ST_TITLE}: Image to Image")
     st.sidebar.markdown("#Image to Image task")
-    prompt = st.text_input(
+    prompt = st.text_area(
         label="Text Prompt",
         value="A fantasy landscape, trending on artstation",
         key="image2image-prompt",
+    )
+    
+    negative_prompt = st.text_area(
+        label="Negative Text Prompt",
+        placeholder="Text Prompt",
+        key="image2image-nega-prompt",
     )
     init_image = st.file_uploader(
         "Init image",

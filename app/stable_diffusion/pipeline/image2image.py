@@ -55,6 +55,7 @@ class StableDiffusionImg2ImgPipeline(DiffusionPipeline):
     def __call__(
         self,
         prompt: Union[str, List[str]],
+        negative_prompt: Union[str, List[str]],
         init_image: Union[torch.FloatTensor, PIL.Image.Image],
         strength: float = 0.8,
         num_inference_steps: Optional[int] = 50,
@@ -145,7 +146,7 @@ class StableDiffusionImg2ImgPipeline(DiffusionPipeline):
         if do_classifier_free_guidance:
             max_length = text_input.input_ids.shape[-1]
             uncond_input = self.tokenizer(
-                [""] * batch_size,
+                negative_prompt,
                 padding="max_length",
                 max_length=max_length,
                 return_tensors="pt",

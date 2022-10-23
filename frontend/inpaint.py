@@ -41,10 +41,16 @@ def main():
             summit = st.form_submit_button("Predict")
 
     st.title(f"{env.ST_TITLE}: inpaint")
-    prompt = st.text_input(
+    prompt = st.text_area(
         label="Text Prompt",
         placeholder="Text Prompt",
         key="inpaints-prompt",
+    )
+
+    negative_prompt = st.text_area(
+        label="Negative Text Prompt",
+        placeholder="Text Prompt",
+        key="inpaints-nega-prompt",
     )
 
     init_image = st.file_uploader("Init image", env.IMAGE_TYPES)

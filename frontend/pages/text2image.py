@@ -19,10 +19,15 @@ URL = os.path.join(env.API_URL, Task.TEXT2IMAGE)
 def main():
     st.title(f"{env.ST_TITLE}: text to image")
     st.sidebar.markdown("# Text to Image task")
-    prompt = st.text_input(
+    prompt = st.text_area(
         label="Text Prompt",
         value="A fantasy landscape, trending on artstation",
         key="text2image-prompt",
+    )
+    negative_prompt = st.text_area(
+        label="Negative Text Prompt",
+        placeholder="Text Prompt",
+        key="text2image-nega-prompt",
     )
     st.markdown("---")
 
@@ -43,7 +48,9 @@ def main():
         height = st.select_slider(
             "Height", options=[128, 256, 512, 768, 1024], value=512
         )
-        width = st.select_slider("Width", options=[128, 256, 512, 768, 1024], value=512)
+        width = st.select_slider(
+            "Width", options=[128, 256, 512, 768, 1024], value=512
+        )
         seed = st.number_input("Seed", value=203)
 
         summit = st.form_submit_button("Predict")
@@ -51,6 +58,7 @@ def main():
     if summit:
         image_urls = predict(
             prompt=prompt,
+            negative_prompt=negative_prompt,
             num_images=int(num_images),
             guidance_scale=float(guidance_scale),
             height=height,
@@ -62,16 +70,20 @@ def main():
 
 def predict(
     prompt: str,
+    negative_prompt: str,
     num_images: int,
     guidance_scale: float,
     height: int,
     width: int,
     seed: int,
 ) -> T.List[str]:
+    prompt = "" if prompt is None else prompt
+    negative_prompt = "" if negative_prompt is None else negative_prompt
     res = requests.post(
         URL,
         data={
             "prompt": prompt,
+            "negative_prompt": negative_prompt,
             "num_images": num_images,
             "guidance_scale": guidance_scale,
             "height": height,
@@ -81,7 +93,6 @@ def predict(
         headers={},
     )
     output = res.json()
-    task_id = output["task_id"]
     image_urls = output["image_urls"]
     return image_urls
 

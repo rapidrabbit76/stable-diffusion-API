@@ -12,7 +12,6 @@ from .response import StableDiffussionResponse
 from app.stable_diffusion.service import StableDiffusionService
 from core.settings import get_settings
 
-
 router = InferringRouter()
 env = get_settings()
 
@@ -25,6 +24,7 @@ class StableDiffusion:
     def text2image(
         self,
         prompt: str = Form(),
+        negative_prompt: str = Form(default=""),
         num_images: int = Form(1, description="num images", ge=1, le=8),
         guidance_scale: float = Form(
             7.5, description="guidance_scale", gt=0, le=20
@@ -33,10 +33,11 @@ class StableDiffusion:
         width: int = Form(512, description="result width"),
         seed: int = Depends(random_seed),
     ):
-        task_id = uuid4().hex
+        task_id = str(uuid4())
 
         images = self.svc.text2image(
             prompt=prompt,
+            negative_prompt=negative_prompt,
             num_images=num_images,
             guidance_scale=guidance_scale,
             height=height,
@@ -45,6 +46,7 @@ class StableDiffusion:
         )
 
         info = {
+            "task": "text2image",
             "prompt": prompt,
             "guidance_scale": guidance_scale,
             "height": height,
@@ -65,6 +67,7 @@ class StableDiffusion:
     def image2image(
         self,
         prompt: str = Form(),
+        negative_prompt: str = Form(default=""),
         init_image: UploadFile = File(...),
         num_images: int = Form(1, description="num images", ge=1, le=8),
         strength: float = Form(0.8, ge=0, le=1.0),
@@ -74,18 +77,21 @@ class StableDiffusion:
         seed: int = Depends(random_seed),
     ):
         init_image = read_image(init_image)
-        task_id = uuid4().hex
+        task_id = str(uuid4())
 
         images = self.svc.image2image(
             prompt=prompt,
+            negative_prompt=negative_prompt,
             init_image=init_image,
             num_images=num_images,
             strength=strength,
+            num_inference_steps=60,
             guidance_scale=guidance_scale,
             seed=seed,
         )
 
         info = {
+            "task": "image2image",
             "prompt": prompt,
             "strength": strength,
             "guidance_scale": guidance_scale,
@@ -106,6 +112,7 @@ class StableDiffusion:
     def inpaint(
         self,
         prompt: str = Form(),
+        negative_prompt: str = Form(default=""),
         init_image: UploadFile = File(...),
         mask_image: UploadFile = File(...),
         num_images: int = Form(1, description="num images", ge=1, le=8),
@@ -118,9 +125,10 @@ class StableDiffusion:
         init_image = read_image(init_image)
         mask_image = read_image(mask_image)
 
-        task_id = uuid4().hex
+        task_id = str(uuid4())
         images = self.svc.inpaint(
             prompt=prompt,
+            negative_prompt=negative_prompt,
             init_image=init_image,
             mask_image=mask_image,
             strength=strength,
@@ -130,6 +138,7 @@ class StableDiffusion:
         )
 
         info = {
+            "task": "inpaint",
             "prompt": prompt,
             "strength": strength,
             "guidance_scale": guidance_scale,

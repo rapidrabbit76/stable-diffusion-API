@@ -10,6 +10,7 @@ from loguru import logger
 from PIL import Image
 import json
 
+
 from .manager import (
     Text2ImageTask,
     Image2ImageTask,
@@ -42,30 +43,41 @@ class StableDiffusionService:
     def text2image(
         self,
         prompt: str,
+        negative_prompt: str = "",
         num_images: int = 1,
         num_inference_steps: int = 50,
         guidance_scale: float = 8.5,
         height=512,
         width=512,
-        seed: int = 203,
+        seed: T.Optional[int] = None,
     ) -> T.List[Image.Image]:
-        prompt = [prompt] * num_images
-        task = Text2ImageTask(
-            prompt=prompt,
-            num_inference_steps=num_inference_steps,
-            guidance_scale=guidance_scale,
-            height=height,
-            width=width,
-            seed=seed,
-        )
-        future = self.streamer.submit([task])
-        images = future.result(timeout=10000)[0]
-        return images
+        prompts = [prompt] * num_images
+        negative_prompt = [negative_prompt] * num_images
+
+        tasks = [
+            Text2ImageTask(
+                prompt=prompt,
+                negative_prompt=negative_prompt,
+                num_inference_steps=num_inference_steps,
+                guidance_scale=guidance_scale,
+                height=height,
+                width=width,
+                seed=seed,
+            )
+            for prompt in data_to_batch(prompts, batch_size=env.MB_BATCH_SIZE)
+        ]
+        future = self.streamer.submit(tasks)
+        images = future.result(timeout=env.MB_TIMEOUT)
+        results = []
+        for image in images:
+            results += image
+        return results
 
     @torch.inference_mode()
     def image2image(
         self,
         prompt: str,
+        negative_prompt: str,
         init_image: Image.Image,
         num_images: int = 1,
         strength: float = 0.8,
@@ -82,6 +94,7 @@ class StableDiffusionService:
         prompt = [prompt] * num_images
         task = Image2ImageTask(
             prompt=prompt,
+            negative_prompt=negative_prompt,
             init_image=init_image,
             strength=strength,
             num_inference_steps=num_inference_steps,
@@ -89,7 +102,7 @@ class StableDiffusionService:
             seed=seed,
         )
         future = self.streamer.submit([task])
-        images = future.result(timeout=10000)[0]
+        images = future.result(timeout=env.MB_TIMEOUT)[0]
         images = self.postprocess(images, origin_size=origin_size)
         return images
 
@@ -107,6 +120,7 @@ class StableDiffusionService:
     def inpaint(
         self,
         prompt: str,
+        negative_prompt: str,
         init_image: Image.Image,
         mask_image: Image.Image,
         strength: float,
@@ -125,6 +139,7 @@ class StableDiffusionService:
         prompt = [prompt] * num_images
         task = InpaintTask(
             prompt=prompt,
+            negative_prompt=negative_prompt,
             init_image=init_image,
             mask_image=mask_image,
             strength=strength,
@@ -133,7 +148,7 @@ class StableDiffusionService:
             seed=seed,
         )
         future = self.streamer.submit([task])
-        images = future.result(timeout=10000)[0]
+        images = future.result(timeout=env.MB_TIMEOUT)[0]
         images = self.postprocess(images, origin_size=origin_size)
         return images
 

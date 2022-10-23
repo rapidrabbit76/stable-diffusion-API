@@ -68,6 +68,7 @@ class StableDiffusionInpaintPipeline(DiffusionPipeline):
     def __call__(
         self,
         prompt: Union[str, List[str]],
+        negative_prompt: Union[str, List[str]],
         init_image: Union[torch.FloatTensor, PIL.Image.Image],
         mask_image: Union[torch.FloatTensor, PIL.Image.Image],
         strength: float = 0.8,
@@ -156,12 +157,10 @@ class StableDiffusionInpaintPipeline(DiffusionPipeline):
         # get unconditional embeddings for classifier free guidance
         if do_classifier_free_guidance:
             max_length = text_input.input_ids.shape[-1]
-            uncond_input = self.tokenizer(
-                [""] * batch_size,
-                padding="max_length",
-                max_length=max_length,
-                return_tensors="pt",
-            )
+            uncond_input = self.tokenizer(negative_prompt,
+                                          padding="max_length",
+                                          max_length=max_length,
+                                          return_tensors="pt",)
             uncond_embeddings = self.text_encoder(
                 uncond_input.input_ids.to(self.device)
             )[0]
