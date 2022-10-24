@@ -39,6 +39,13 @@ def main():
     st.markdown("---")
 
     with st.sidebar as bar, st.form("key") as form:
+        steps = st.slider(
+            "Number of Steps",
+            min_value=1,
+            max_value=50,
+            step=1,
+            value=25,
+        )
         guidance_scale = st.slider(
             "Guidance scale",
             min_value=0.1,
@@ -53,15 +60,14 @@ def main():
             value=0.8,
             step=0.01,
         )
-        seed = st.number_input(
-            "Seed",
-            value=203,
-        )
+        seed = st.number_input("Seed", value=-1)
         summit = st.form_submit_button("Predict")
 
     if summit:
         image_urls = predict(
             prompt=prompt,
+            negative_prompt=negative_prompt,
+            steps=int(steps),
             init_image=init_image.getvalue(),
             strength=float(strength),
             guidance_scale=float(guidance_scale),
@@ -72,7 +78,9 @@ def main():
 
 def predict(
     prompt: str,
+    negative_prompt: str,
     init_image: bytes,
+    steps: int,
     guidance_scale: float,
     strength: float,
     seed: int,
@@ -82,6 +90,8 @@ def predict(
         URL,
         data={
             "prompt": prompt,
+            "negative_prompt": negative_prompt,
+            "steps": steps,
             "num_images": 1,
             "guidance_scale": guidance_scale,
             "strength": strength,
@@ -90,8 +100,9 @@ def predict(
         files=files,
         headers={},
     )
+    if not res.ok:
+        st.error(res.text)
     output = res.json()
-    task_id = output["task_id"]
     image_urls = output["image_urls"]
     return image_urls
 

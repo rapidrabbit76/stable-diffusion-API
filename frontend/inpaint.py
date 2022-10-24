@@ -23,6 +23,13 @@ def main():
         stroke_width = st.slider("Stroke width: ", 1, 50, 25)
 
         with st.form("metadata"):
+            steps = st.slider(
+                "Number of Steps",
+                min_value=1,
+                max_value=50,
+                step=1,
+                value=25,
+            )
             guidance_scale = st.slider(
                 "Guidance scale",
                 min_value=0.1,
@@ -37,7 +44,7 @@ def main():
                 value=0.8,
                 step=0.01,
             )
-            seed = st.number_input("Seed", value=203)
+            seed = st.number_input("Seed", value=-1)
             summit = st.form_submit_button("Predict")
 
     st.title(f"{env.ST_TITLE}: inpaint")
@@ -79,6 +86,8 @@ def main():
 
         image_urls = predict(
             prompt=prompt,
+            negative_prompt=negative_prompt,
+            steps=int(steps),
             init_image=init_image.getvalue(),
             mask_image=mask_image_bytes.getvalue(),
             strength=float(strength),
@@ -105,6 +114,8 @@ def get_mask_image(canvas) -> Image.Image:
 
 def predict(
     prompt: str,
+    negative_prompt: str,
+    steps: int,
     init_image: bytes,
     mask_image: bytes,
     guidance_scale: float,
@@ -119,6 +130,8 @@ def predict(
         URL,
         data={
             "prompt": prompt,
+            "negative_prompt": negative_prompt,
+            "steps": steps,
             "num_images": 1,
             "guidance_scale": guidance_scale,
             "strength": strength,
@@ -128,7 +141,7 @@ def predict(
         headers={},
     )
     if not res.ok:
-        st.warning(res.json())
+        st.error(res.text)
 
     output = res.json()
     image_urls = output["image_urls"]

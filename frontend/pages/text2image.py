@@ -38,6 +38,13 @@ def main():
             max_value=8,
             step=1,
         )
+        steps = st.slider(
+            "Number of Steps",
+            min_value=1,
+            max_value=50,
+            step=1,
+            value=25,
+        )
         guidance_scale = st.slider(
             "Guidance scale",
             min_value=0.1,
@@ -46,10 +53,12 @@ def main():
             step=0.01,
         )
         height = st.select_slider(
-            "Height", options=[128, 256, 512, 768, 1024], value=512
+            "Height", options=[size for size in range(128, 1025, 64)], value=512
         )
-        width = st.select_slider("Width", options=[128, 256, 512, 768, 1024], value=512)
-        seed = st.number_input("Seed", value=203)
+        width = st.select_slider(
+            "Width", options=[size for size in range(128, 1025, 64)], value=512
+        )
+        seed = st.number_input("Seed", value=-1)
 
         summit = st.form_submit_button("Predict")
 
@@ -57,6 +66,7 @@ def main():
         image_urls = predict(
             prompt=prompt,
             negative_prompt=negative_prompt,
+            steps=int(steps),
             num_images=int(num_images),
             guidance_scale=float(guidance_scale),
             height=height,
@@ -69,6 +79,7 @@ def main():
 def predict(
     prompt: str,
     negative_prompt: str,
+    steps: int,
     num_images: int,
     guidance_scale: float,
     height: int,
@@ -82,6 +93,7 @@ def predict(
         data={
             "prompt": prompt,
             "negative_prompt": negative_prompt,
+            "steps": steps,
             "num_images": num_images,
             "guidance_scale": guidance_scale,
             "height": height,
@@ -90,6 +102,8 @@ def predict(
         },
         headers={},
     )
+    if not res.ok:
+        st.error(res.json())
     output = res.json()
     image_urls = output["image_urls"]
     return image_urls
