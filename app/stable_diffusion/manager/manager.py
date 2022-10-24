@@ -36,48 +36,31 @@ class StableDiffusionManager:
         batch: T.List[_StableDiffusionTask],
     ):
         task = batch[0]
+        pipeline = self.text2image
         if isinstance(task, Text2ImageTask):
-            images = self.predict_text2image(task)
+            pipeline = self.text2image
         elif isinstance(task, Image2ImageTask):
-            images = self.predict_image2image(task)
+            pipeline = self.image2image
         elif isinstance(task, InpaintTask):
-            images = self.predict_inpaint(task)
+            pipeline = self.inpaint
+
+        device = env.CUDA_DEVICE
+
+        generator = self._get_generator(task, device)
+        with torch.autocast("cuda" if device != "cpu" else "cpu"):
+            images = pipeline(**task.dict(), generator=generator)
+            if device != "cpu":
+                torch.cuda.empty_cache()
+
         return [images]
 
     def _get_generator(self, task: _StableDiffusionTask, device: str):
         generator = torch.Generator(device=device)
         seed = task.seed
         seed = seed if seed else randint(1, sys.maxsize)
+        seed = seed if seed > 0 else randint(1, sys.maxsize)
         generator.manual_seed(seed)
         return generator
-
-    def predict_text2image(self, task: Text2ImageTask):
-        device = env.CUDA_DEVICE
-        generator = self._get_generator(task, device)
-        with torch.autocast("cuda" if device != "cpu" else "cpu"):
-            images = self.text2image(**task.dict(), generator=generator)
-            if device != "cpu":
-                torch.cuda.empty_cache()
-        return images
-
-    def predict_image2image(self, task: Image2ImageTask):
-        device = env.CUDA_DEVICE
-        generator = self._get_generator(task, device)
-        with torch.autocast("cuda" if device != "cpu" else "cpu"):
-            images = self.image2image(**task.dict(), generator=generator)
-            if device != "cpu":
-                torch.cuda.empty_cache()
-        return images
-
-    def predict_inpaint(self, task: InpaintTask):
-        device = env.CUDA_DEVICE
-        generator = self._get_generator(task, device)
-        with torch.autocast("cuda" if device != "cpu" else "cpu"):
-            images = self.inpaint(**task.dict(), generator=generator)
-
-            if device != "cpu":
-                torch.cuda.empty_cache()
-        return images
 
 
 @lru_cache(maxsize=1)

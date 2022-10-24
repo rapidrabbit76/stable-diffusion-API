@@ -52,12 +52,11 @@ class StableDiffusionService:
         seed: T.Optional[int] = None,
     ) -> T.List[Image.Image]:
         prompts = [prompt] * num_images
-        negative_prompt = [negative_prompt] * num_images
 
         tasks = [
             Text2ImageTask(
                 prompt=prompt,
-                negative_prompt=negative_prompt,
+                negative_prompt=[negative_prompt] * len(prompt),
                 num_inference_steps=num_inference_steps,
                 guidance_scale=guidance_scale,
                 height=height,
@@ -66,12 +65,8 @@ class StableDiffusionService:
             )
             for prompt in data_to_batch(prompts, batch_size=env.MB_BATCH_SIZE)
         ]
-        future = self.streamer.submit(tasks)
-        images = future.result(timeout=env.MB_TIMEOUT)
-        results = []
-        for image in images:
-            results += image
-        return results
+        images = self._summit(tasks)
+        return images
 
     @torch.inference_mode()
     def image2image(
@@ -91,27 +86,23 @@ class StableDiffusionService:
         if origin_size != (w, h):
             init_image = init_image.resize((w, h), resample=Image.LANCZOS)
 
-        prompt = [prompt] * num_images
-        task = Image2ImageTask(
-            prompt=prompt,
-            negative_prompt=negative_prompt,
-            init_image=init_image,
-            strength=strength,
-            num_inference_steps=num_inference_steps,
-            guidance_scale=guidance_scale,
-            seed=seed,
-        )
-        future = self.streamer.submit([task])
-        images = future.result(timeout=env.MB_TIMEOUT)[0]
-        images = self.postprocess(images, origin_size=origin_size)
-        return images
+        prompts = [prompt] * num_images
 
-    @classmethod
-    def postprocess(cls, images: T.List[Image.Image], origin_size: T.Tuple[int, int]):
-        if origin_size == images[0].size:
-            return images
-        for i, image in enumerate(images):
-            images[i] = image.resize(origin_size)
+        tasks = [
+            Image2ImageTask(
+                prompt=prompt,
+                negative_prompt=[negative_prompt] * len(prompt),
+                init_image=init_image,
+                strength=strength,
+                num_inference_steps=num_inference_steps,
+                guidance_scale=guidance_scale,
+                seed=seed,
+            )
+            for prompt in data_to_batch(prompts, batch_size=env.MB_BATCH_SIZE)
+        ]
+
+        images = self._summit(tasks)
+        images = self.postprocess(images, origin_size=origin_size)
         return images
 
     @torch.inference_mode()
@@ -134,20 +125,42 @@ class StableDiffusionService:
             init_image = init_image.resize((w, h), resample=Image.LANCZOS)
             mask_image = mask_image.resize((w, h), resample=Image.NEAREST)
 
-        prompt = [prompt] * num_images
-        task = InpaintTask(
-            prompt=prompt,
-            negative_prompt=negative_prompt,
-            init_image=init_image,
-            mask_image=mask_image,
-            strength=strength,
-            num_inference_steps=num_inference_steps,
-            guidance_scale=guidance_scale,
-            seed=seed,
-        )
-        future = self.streamer.submit([task])
-        images = future.result(timeout=env.MB_TIMEOUT)[0]
+        prompts = [prompt] * num_images
+
+        tasks = [
+            InpaintTask(
+                prompt=prompt,
+                negative_prompt=[negative_prompt] * len(prompt),
+                init_image=init_image,
+                mask_image=mask_image,
+                strength=strength,
+                num_inference_steps=num_inference_steps,
+                guidance_scale=guidance_scale,
+                seed=seed,
+            )
+            for prompt in data_to_batch(prompts, batch_size=env.MB_BATCH_SIZE)
+        ]
+
+        images = self._summit(tasks)
         images = self.postprocess(images, origin_size=origin_size)
+        return images
+
+    def _summit(self, tasks) -> T.List[Image.Image]:
+        future = self.streamer.submit(tasks)
+        batchs = future.result(timeout=env.MB_TIMEOUT)
+        images = []
+        for batch in batchs:
+            images += batch
+        return images
+
+    @classmethod
+    def postprocess(
+        cls, images: T.List[Image.Image], origin_size: T.Tuple[int, int]
+    ):
+        if origin_size == images[0].size:
+            return images
+        for i, image in enumerate(images):
+            images[i] = image.resize(origin_size)
         return images
 
     @staticmethod

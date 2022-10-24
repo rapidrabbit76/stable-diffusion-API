@@ -5,7 +5,6 @@ from uuid import uuid4
 from fastapi import Form, Depends, UploadFile, File
 from fastapi_restful.cbv import cbv
 from fastapi_restful.inferring_router import InferringRouter
-from PIL import Image
 
 from .request import random_seed, read_image
 from .response import StableDiffussionResponse
@@ -26,10 +25,13 @@ class StableDiffusion:
         prompt: str = Form(),
         negative_prompt: str = Form(default=""),
         num_images: int = Form(1, description="num images", ge=1, le=8),
-        guidance_scale: float = Form(7.5, description="guidance_scale", gt=0, le=20),
+        steps: int = Form(25, ge=1),
+        guidance_scale: float = Form(
+            7.5, description="guidance_scale", gt=0, le=20
+        ),
         height: int = Form(512, description="result height"),
         width: int = Form(512, description="result width"),
-        seed: int = Depends(random_seed),
+        seed: T.Optional[int] = Form(None),
     ):
         task_id = str(uuid4())
 
@@ -37,6 +39,7 @@ class StableDiffusion:
             prompt=prompt,
             negative_prompt=negative_prompt,
             num_images=num_images,
+            num_inference_steps=steps,
             guidance_scale=guidance_scale,
             height=height,
             width=width,
@@ -50,6 +53,7 @@ class StableDiffusion:
             "height": height,
             "width": width,
             "seed": seed,
+            "num_inference_steps": steps,
         }
         image_paths = self.svc.image_save(images, task_id, info=info)
         urls = [os.path.join(env.IMAGESERVER_URL, path) for path in image_paths]
@@ -68,9 +72,12 @@ class StableDiffusion:
         negative_prompt: str = Form(default=""),
         init_image: UploadFile = File(...),
         num_images: int = Form(1, description="num images", ge=1, le=8),
+        steps: int = Form(25, ge=1),
         strength: float = Form(0.8, ge=0, le=1.0),
-        guidance_scale: float = Form(7.5, description="guidance_scale", gt=0, le=20),
-        seed: int = Depends(random_seed),
+        guidance_scale: float = Form(
+            7.5, description="guidance_scale", gt=0, le=20
+        ),
+        seed: T.Optional[int] = Form(None),
     ):
         init_image = read_image(init_image)
         task_id = str(uuid4())
@@ -81,7 +88,7 @@ class StableDiffusion:
             init_image=init_image,
             num_images=num_images,
             strength=strength,
-            num_inference_steps=60,
+            num_inference_steps=steps,
             guidance_scale=guidance_scale,
             seed=seed,
         )
@@ -92,6 +99,7 @@ class StableDiffusion:
             "strength": strength,
             "guidance_scale": guidance_scale,
             "seed": seed,
+            "num_inference_steps": steps,
         }
         image_paths = self.svc.image_save(images, task_id, info=info)
         init_image.save(os.path.join(env.SAVE_DIR, task_id, "init_image.webp"))
@@ -112,9 +120,12 @@ class StableDiffusion:
         init_image: UploadFile = File(...),
         mask_image: UploadFile = File(...),
         num_images: int = Form(1, description="num images", ge=1, le=8),
+        steps: int = Form(25, ge=1),
         strength: float = Form(0.8, ge=0, le=1.0),
-        guidance_scale: float = Form(7.5, description="guidance_scale", gt=0, le=20),
-        seed: int = Depends(random_seed),
+        guidance_scale: float = Form(
+            7.5, description="guidance_scale", gt=0, le=20
+        ),
+        seed: T.Optional[int] = Form(None),
     ):
         init_image = read_image(init_image)
         mask_image = read_image(mask_image)
@@ -125,6 +136,7 @@ class StableDiffusion:
             negative_prompt=negative_prompt,
             init_image=init_image,
             mask_image=mask_image,
+            num_inference_steps=steps,
             strength=strength,
             num_images=num_images,
             guidance_scale=guidance_scale,
@@ -137,6 +149,7 @@ class StableDiffusion:
             "strength": strength,
             "guidance_scale": guidance_scale,
             "seed": seed,
+            "num_inference_steps": steps,
         }
         image_paths = self.svc.image_save(images, task_id, info=info)
         init_image.save(os.path.join(env.SAVE_DIR, task_id, "init_image.webp"))
