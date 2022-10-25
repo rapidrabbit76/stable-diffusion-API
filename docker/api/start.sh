@@ -1,4 +1,3 @@
-python3 -m uvicorn app.server:app \
-    --host 0.0.0.0 \
-    --port 3000 \
+python3 -m gunicorn app.server:app -k uvicorn.workers.UvicornWorker \
+    --bind 0.0.0.0:3000 \
     --workers 1 

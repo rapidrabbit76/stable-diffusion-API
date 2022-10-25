@@ -11,7 +11,8 @@ RUN pip install --no-cache-dir \
     service-streamer==0.1.2 \
     fastapi-restful==0.4.3 \
     fastapi-health==0.4.0 \
-    loguru==0.6.0 
+    loguru==0.6.0  \
+    gunicorn==20.1.0
 
 
 RUN pip install --no-cache-dir \

@@ -1,8 +1,9 @@
 import typing as T
 import os
-import sys
 import streamlit as st
 import requests
+from PIL import Image
+from streamlit_image_comparison import image_comparison
 from settings import load_config, get_settings
 from task import Task
 
@@ -21,20 +22,18 @@ def main():
     prompt = st.text_area(
         label="Text Prompt",
         value="A fantasy landscape, trending on artstation",
-        key="image2image-prompt",
+        key="prompt",
     )
 
     negative_prompt = st.text_area(
         label="Negative Text Prompt",
         placeholder="Text Prompt",
-        key="image2image-nega-prompt",
+        key="nega-prompt",
     )
     init_image = st.file_uploader(
         "Init image",
         env.IMAGE_TYPES,
     )
-    if init_image:
-        st.image(init_image)
 
     st.markdown("---")
 
@@ -73,7 +72,20 @@ def main():
             guidance_scale=float(guidance_scale),
             seed=seed,
         )
-        st.image(image_urls)
+
+        c1, c2 = st.columns([1, 1])
+        c1.title("Origin")
+        c1.image(init_image)
+
+        c2.title("Result")
+        c2.image(image_urls)
+
+        image_comparison(
+            img1=Image.open(init_image),
+            img2=image_urls[-1],
+            label1="origin",
+            label2="diffusion",
+        )
 
 
 def predict(
@@ -85,6 +97,8 @@ def predict(
     strength: float,
     seed: int,
 ) -> T.List[str]:
+    prompt = " " if prompt is None else prompt
+    negative_prompt = "" if negative_prompt is None else negative_prompt
     files = [("init_image", ("image.jpg", init_image, "image/*"))]
     res = requests.post(
         URL,

@@ -3,10 +3,11 @@ import os
 from io import BytesIO
 import streamlit as st
 import requests
+from PIL import Image
+from streamlit_image_comparison import image_comparison
 from streamlit_drawable_canvas import st_canvas
 from PIL import Image, ImageOps
 from settings import load_config, get_settings
-from utils import image_grid
 from task import Task
 
 load_config("Stable-Diffusion: inpaint task")
@@ -51,13 +52,13 @@ def main():
     prompt = st.text_area(
         label="Text Prompt",
         placeholder="Text Prompt",
-        key="inpaints-prompt",
+        key="prompt",
     )
 
     negative_prompt = st.text_area(
         label="Negative Text Prompt",
         placeholder="Text Prompt",
-        key="inpaints-nega-prompt",
+        key="nega-prompt",
     )
 
     init_image = st.file_uploader("Init image", env.IMAGE_TYPES)
@@ -102,6 +103,13 @@ def main():
         c2.title("Result")
         c2.image(image_urls)
 
+        image_comparison(
+            img1=Image.open(init_image),
+            img2=image_urls[-1],
+            label1="origin",
+            label2="diffusion",
+        )
+
 
 def get_mask_image(canvas) -> Image.Image:
     mask_image = Image.fromarray(canvas.image_data)
@@ -122,6 +130,9 @@ def predict(
     strength: float,
     seed: int,
 ) -> T.List[str]:
+    print(prompt)
+    prompt = " " if prompt is None else prompt
+    negative_prompt = "" if negative_prompt is None else negative_prompt
     files = [
         ("init_image", ("image.webp", init_image, "image/*")),
         ("mask_image", ("image.webp", mask_image, "image/*")),

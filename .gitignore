@@ -21,6 +21,8 @@ tensorboard/
 wandb/
 logs/
 
+temp/
+
 # DEV
 debug.py
 *.ipynb

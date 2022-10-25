@@ -22,12 +22,12 @@ def main():
     prompt = st.text_area(
         label="Text Prompt",
         value="A fantasy landscape, trending on artstation",
-        key="text2image-prompt",
+        key="prompt",
     )
     negative_prompt = st.text_area(
         label="Negative Text Prompt",
         placeholder="Text Prompt",
-        key="text2image-nega-prompt",
+        key="nega-prompt",
     )
     st.markdown("---")
 
@@ -86,7 +86,7 @@ def predict(
     width: int,
     seed: int,
 ) -> T.List[str]:
-    prompt = "" if prompt is None else prompt
+    prompt = " " if prompt is None else prompt
     negative_prompt = "" if negative_prompt is None else negative_prompt
     res = requests.post(
         URL,
