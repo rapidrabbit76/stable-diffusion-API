@@ -51,3 +51,29 @@ services:
       API_URL: http://api:3000
       ST_TITLE: Stable-diffusion
       ST_WIDE: "True"
+
+  rabbitmq:
+    restart: always
+    build:
+      context: .
+      dockerfile: docker/remmitmq/Dockerfile
+    ports:
+      - "127.0.0.1:5672:5672"
+      - "0.0.0.0:15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: "admin"
+      RABBITMQ_DEFAULT_PASS: "admin"
+
+  redis:
+    restart: always
+    build:
+      context: .
+      dockerfile: docker/redis/Dockerfile
+    ports:
+      - "6379:6379"
+
+  redisinsights:
+    image: redislabs/redisinsight:latest
+    restart: always
+    ports:
+      - '8001:8001'
