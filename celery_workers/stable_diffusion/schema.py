@@ -6,6 +6,7 @@ import typing as T
 class Text2ImageTask(BaseModel):
     prompt: T.Union[str, T.List[str]] = Field(...)
     negative_prompt: T.Union[str, T.List[str]] = Field(...)
+    num_images: int
     num_inference_steps: int = Field(..., gt=0)
     guidance_scale: float = Field(..., ge=0.0)
     height: int
@@ -23,6 +24,7 @@ class Text2ImageTask(BaseModel):
 class Image2ImageTask(BaseModel):
     prompt: T.Union[str, T.List[str]] = Field(...)
     negative_prompt: T.Union[str, T.List[str]] = Field(...)
+    num_images: int
     init_image: T.Any
     strength: float = Field(..., ge=0.0, le=1.0)
     num_inference_steps: int = Field(..., gt=0)
@@ -33,9 +35,17 @@ class Image2ImageTask(BaseModel):
 class InpaintTask(BaseModel):
     prompt: T.Union[str, T.List[str]] = Field(...)
     negative_prompt: T.Union[str, T.List[str]] = Field(...)
+    num_images: int
     init_image: T.Any
     mask_image: T.Any
     strength: float = Field(..., ge=0.0, le=1.0)
     num_inference_steps: int = Field(..., gt=0)
     guidance_scale: float = Field(..., ge=0.0)
     seed: T.Optional[int]
+
+
+StableDiffusionTaskSchema = T.Union[
+    Text2ImageTask,
+    Image2ImageTask,
+    InpaintTask,
+]

@@ -4,12 +4,11 @@ from pydantic import BaseSettings
 
 
 class ModelSetting(BaseSettings):
-    MODEL_ID: str = "CompVis/stable-diffusion-v1-4"
+    MODEL_PATH: str = "./ckpt"
 
 
 class DeviceSettings(BaseSettings):
     CUDA_DEVICE = "cuda"
-    CUDA_DEVICES = [0]
 
 
 class MicroBatchSettings(BaseSettings):
@@ -28,9 +27,8 @@ class Settings(
     MicroBatchSettings,
     CelerySettings,
 ):
-    HUGGINGFACE_TOKEN: str
-    IMAGESERVER_URL: str
-    SAVE_DIR: str = "static"
+    IMAGESERVER_URL: str = "localhost:300"
+    SAVE_DIR: str = "../API/static"
 
     CORS_ALLOW_ORIGINS: T.List[str] = ["*"]
     CORS_CREDENTIALS: bool = True

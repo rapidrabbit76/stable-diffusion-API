@@ -1,3 +1,4 @@
+import os
 from fastapi import Depends
 import torch
 from functools import lru_cache
@@ -88,15 +89,13 @@ def build_inpaint_pipeline() -> StableDiffusionInpaintPipeline:
 
 @lru_cache(maxsize=1)
 def build_vae() -> AutoencoderKL:
-    model_id = env.MODEL_ID
     device = env.CUDA_DEVICE
     logger.info("stable diffusion model VAE loading...")
     vae = AutoencoderKL.from_pretrained(
-        model_id,
+        env.MODEL_PATH,
         subfolder="vae",
         revision="fp16",
         torch_dtype=torch.float16,
-        use_auth_token=env.HUGGINGFACE_TOKEN,
     )
     vae = vae.to(device)
     return vae
@@ -104,16 +103,14 @@ def build_vae() -> AutoencoderKL:
 
 @lru_cache(maxsize=1)
 def build_unet():
-    model_id = env.MODEL_ID
     device = env.CUDA_DEVICE
 
     logger.info("stable diffusion model Unet loading...")
     unet = UNet2DConditionModel.from_pretrained(
-        model_id,
+        env.MODEL_PATH,
         subfolder="unet",
         revision="fp16",
         torch_dtype=torch.float16,
-        use_auth_token=env.HUGGINGFACE_TOKEN,
     )
     unet = unet.to(device)
     return unet
@@ -122,18 +119,20 @@ def build_unet():
 @lru_cache(maxsize=1)
 def build_tokenizer():
     logger.info("stable diffusion model tokenizer loading...")
-    tokenizer = CLIPTokenizer.from_pretrained("openai/clip-vit-large-patch14")
+    tokenizer = CLIPTokenizer.from_pretrained(
+        env.MODEL_PATH,
+        subfolder="tokenizer",
+    )
     return tokenizer
 
 
 @lru_cache(maxsize=1)
 def build_text_encoder():
-    model_id = env.MODEL_ID
     device = env.CUDA_DEVICE
 
     logger.info("stable diffusion model text encoder loading...")
     text_encoder = CLIPTextModel.from_pretrained(
-        "openai/clip-vit-large-patch14"
+        os.path.join(env.MODEL_PATH, "text_encoder")
     )
     text_encoder = text_encoder.to(device)
     return text_encoder

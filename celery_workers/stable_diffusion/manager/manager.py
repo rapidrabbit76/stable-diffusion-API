@@ -7,6 +7,7 @@ from .models import (
     build_image2image_pipeline,
     build_inpaint_pipeline,
 )
+
 from .schema import (
     InpaintTask,
     Text2ImageTask,
@@ -31,9 +32,8 @@ class StableDiffusionManager:
     @torch.inference_mode()
     def predict(
         self,
-        batch: T.List[_StableDiffusionTask],
+        task: _StableDiffusionTask,
     ):
-        task = batch[0]
         pipeline = self.text2image
         if isinstance(task, Text2ImageTask):
             pipeline = self.text2image
@@ -50,7 +50,7 @@ class StableDiffusionManager:
             if device != "cpu":
                 torch.cuda.empty_cache()
 
-        return [images]
+        return images
 
     def _get_generator(self, task: _StableDiffusionTask, device: str):
         generator = torch.Generator(device=device)

@@ -45,7 +45,7 @@ def init_middleware() -> T.List[Middleware]:
 def init_settings(app: FastAPI):
     @app.on_event("startup")
     def startup_event():
-        from core.dependencies import models
+        pass
 
     @app.on_event("shutdown")
     def shutdown_event():

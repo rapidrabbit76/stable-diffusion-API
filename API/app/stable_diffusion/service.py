@@ -1,25 +1,16 @@
 import os
 import typing as T
 from itertools import chain, islice
-from service_streamer import ThreadedStreamer
 
 import torch
 from core.settings import get_settings
-from fastapi import Depends
+from fastapi import Depends, Response, status
+from fastapi.responses import JSONResponse
 from loguru import logger
 from PIL import Image
-import json
+from celery import states
 
-
-from .manager import (
-    Text2ImageTask,
-    Image2ImageTask,
-    InpaintTask,
-)
-
-from .manager import (
-    build_streamer,
-)
+from core.celery_app import get_celery_app, Celery
 
 
 env = get_settings()
@@ -34,13 +25,37 @@ def data_to_batch(datasets: T.List[T.Any], batch_size: int):
 class StableDiffusionService:
     def __init__(
         self,
-        streamer: ThreadedStreamer = Depends(build_streamer),
+        celery_app: Celery = Depends(get_celery_app),
     ) -> None:
         logger.info(f"DI:{self.__class__.__name__}")
-        self.streamer = streamer
+        self.celery_app = celery_app
+        self.task = self.celery_app.signature("tasks.predict")
 
-    @torch.inference_mode()
-    def text2image(
+    async def fetch_task_stats(self, task_id: str):
+        res = self.celery_app.AsyncResult(task_id)
+        state = res.state
+
+        if state != states.SUCCESS:
+            result = dict(task_id=task_id, state=state)
+            return JSONResponse(
+                content=result,
+                status_code=status.HTTP_202_ACCEPTED,
+            )
+
+        result = res.get()
+        image_urls = result.get("image_uris")
+        image_urls = list(
+            map(lambda x: os.path.join(env.IMAGESERVER_URL, x), image_urls)
+        )
+        result = dict(
+            task_id=task_id,
+            state=state,
+            prompt=result.get("prompt"),
+            image_urls=image_urls,
+        )
+        return result
+
+    async def text2image(
         self,
         prompt: str,
         negative_prompt: str = "",
@@ -50,25 +65,20 @@ class StableDiffusionService:
         height=512,
         width=512,
         seed: T.Optional[int] = None,
-    ) -> T.List[Image.Image]:
-        prompts = [prompt] * num_images
+    ) -> str:
+        task = self.task.delay(
+            task="text2image",
+            prompt=prompt,
+            negative_prompt=negative_prompt,
+            guidance_scale=guidance_scale,
+            num_images=num_images,
+            num_inference_steps=num_inference_steps,
+            height=height,
+            width=width,
+            seed=seed,
+        )
+        return task.id
 
-        tasks = [
-            Text2ImageTask(
-                prompt=prompt,
-                negative_prompt=[negative_prompt] * len(prompt),
-                num_inference_steps=num_inference_steps,
-                guidance_scale=guidance_scale,
-                height=height,
-                width=width,
-                seed=seed,
-            )
-            for prompt in data_to_batch(prompts, batch_size=env.MB_BATCH_SIZE)
-        ]
-        images = self._summit(tasks)
-        return images
-
-    @torch.inference_mode()
     def image2image(
         self,
         prompt: str,
@@ -80,30 +90,7 @@ class StableDiffusionService:
         guidance_scale: float = 8.5,
         seed: int = 203,
     ) -> T.List[Image.Image]:
-        origin_size = init_image.size
-        w, h = origin_size
-        w, h = map(lambda x: x - x % 64, (w, h))
-        if origin_size != (w, h):
-            init_image = init_image.resize((w, h), resample=Image.LANCZOS)
-
-        prompts = [prompt] * num_images
-
-        tasks = [
-            Image2ImageTask(
-                prompt=prompt,
-                negative_prompt=[negative_prompt] * len(prompt),
-                init_image=init_image,
-                strength=strength,
-                num_inference_steps=num_inference_steps,
-                guidance_scale=guidance_scale,
-                seed=seed,
-            )
-            for prompt in data_to_batch(prompts, batch_size=env.MB_BATCH_SIZE)
-        ]
-
-        images = self._summit(tasks)
-        images = self.postprocess(images, origin_size=origin_size)
-        return images
+        ...
 
     @torch.inference_mode()
     def inpaint(
@@ -118,64 +105,4 @@ class StableDiffusionService:
         guidance_scale: float = 8.5,
         seed: int = 203,
     ) -> T.List[Image.Image]:
-        origin_size = init_image.size
-        w, h = origin_size
-        w, h = map(lambda x: x - x % 64, (w, h))
-        if origin_size != (w, h):
-            init_image = init_image.resize((w, h), resample=Image.LANCZOS)
-            mask_image = mask_image.resize((w, h), resample=Image.NEAREST)
-
-        prompts = [prompt] * num_images
-
-        tasks = [
-            InpaintTask(
-                prompt=prompt,
-                negative_prompt=[negative_prompt] * len(prompt),
-                init_image=init_image,
-                mask_image=mask_image,
-                strength=strength,
-                num_inference_steps=num_inference_steps,
-                guidance_scale=guidance_scale,
-                seed=seed,
-            )
-            for prompt in data_to_batch(prompts, batch_size=env.MB_BATCH_SIZE)
-        ]
-
-        images = self._summit(tasks)
-        images = self.postprocess(images, origin_size=origin_size)
-        return images
-
-    def _summit(self, tasks) -> T.List[Image.Image]:
-        future = self.streamer.submit(tasks)
-        batchs = future.result(timeout=env.MB_TIMEOUT)
-        images = []
-        for batch in batchs:
-            images += batch
-        return images
-
-    @classmethod
-    def postprocess(
-        cls, images: T.List[Image.Image], origin_size: T.Tuple[int, int]
-    ):
-        if origin_size == images[0].size:
-            return images
-        for i, image in enumerate(images):
-            images[i] = image.resize(origin_size)
-        return images
-
-    @staticmethod
-    def image_save(images: T.List[Image.Image], task_id: str, info: dict):
-        save_dir = os.path.join(env.SAVE_DIR, task_id)
-        os.makedirs(save_dir)
-        image_urls = []
-
-        with open(os.path.join(save_dir, "info.json"), "w") as f:
-            json.dump(info, f)
-
-        for i, image in enumerate(images):
-            filename = f"{str(i).zfill(2)}.webp"
-            save_path = os.path.join(env.SAVE_DIR, task_id, filename)
-            image_url = os.path.join(task_id, filename)
-            image.save(save_path)
-            image_urls.append(image_url)
-        return image_urls
+        ...
