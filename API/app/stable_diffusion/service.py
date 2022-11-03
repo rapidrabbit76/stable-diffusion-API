@@ -4,13 +4,16 @@ from itertools import chain, islice
 
 import torch
 from core.settings import get_settings
-from fastapi import Depends, Response, status
-from fastapi.responses import JSONResponse
+from fastapi import Depends
 from loguru import logger
 from PIL import Image
 from celery import states
 
 from core.celery_app import get_celery_app, Celery
+
+from api.stable_diffusion.response import (
+    StableDiffussionResultResponse,
+)
 
 
 env = get_settings()
@@ -29,31 +32,29 @@ class StableDiffusionService:
     ) -> None:
         logger.info(f"DI:{self.__class__.__name__}")
         self.celery_app = celery_app
-        self.task = self.celery_app.signature("tasks.predict")
+        self.task = self.celery_app.signature(env.CELERY_TASK_NAME)
 
-    async def fetch_task_stats(self, task_id: str):
+    async def fetch_task_stats(
+        self, task_id: str
+    ) -> StableDiffussionResultResponse:
         res = self.celery_app.AsyncResult(task_id)
         state = res.state
+        results = res.result
 
         if state != states.SUCCESS:
-            result = dict(task_id=task_id, state=state)
-            return JSONResponse(
-                content=result,
-                status_code=status.HTTP_202_ACCEPTED,
+            results = (
+                str(results) if isinstance(results, Exception) else results
+            )
+            return StableDiffussionResultResponse(
+                task_id=task_id, state=state, results=results
             )
 
-        result = res.get()
-        image_urls = result.get("image_uris")
-        image_urls = list(
-            map(lambda x: os.path.join(env.IMAGESERVER_URL, x), image_urls)
+        image_urls = map(
+            lambda x: os.path.join(env.IMAGESERVER_URL, x), results
         )
-        result = dict(
-            task_id=task_id,
-            state=state,
-            prompt=result.get("prompt"),
-            image_urls=image_urls,
+        return StableDiffussionResultResponse(
+            task_id=task_id, state=state, results=list(image_urls)
         )
-        return result
 
     async def text2image(
         self,
