@@ -1,5 +1,7 @@
 import typing as T
 import os
+import gc
+import torch
 from PIL import Image
 import json
 from itertools import chain, islice
@@ -11,23 +13,12 @@ from stable_diffusion.manager.schema import Text2ImageTask
 
 # from core.celery_app import app
 from core.settings import env
+from core.celery_app import app
 from celery import Celery, states
+from celery.exceptions import TaskError, Ignore
 from random import randint
-
-
-app = Celery(
-    "tasks",
-    broker=env.CELERY_BROKER,
-    backend=env.CELERY_BACKEND,
-)
-app.conf.task_serializer = "pickle"
-app.conf.result_serializer = "pickle"
-app.conf.accept_content = [
-    "application/json",
-    "application/x-python-serialize",
-]
-
 from core.settings import env
+from time import sleep
 
 
 manager = StableDiffusionManager()
@@ -41,18 +32,30 @@ def data_to_batch(datasets: T.List[T.Any], batch_size: int):
 
 @app.task(bind=True)
 def predict(self, **kwargs):
+
     task_id = self.request.id
     self.update_state(state=states.RECEIVED)
     task = kwargs.pop("task")
     self.update_state(state="PROGRESS")
-    if task == "text2image":
-        images = task_text2image(**kwargs)
-    print(images, type(images))
+
+    try:
+        if task == "text2image":
+            images = task_text2image(**kwargs)
+    except RuntimeError as e:
+        if "CUDA out of memory. " in str(e):
+            gc.collect()
+            torch.cuda.empty_cache()
+            self.update_state(
+                state=states.FAILURE,
+            )
+            raise Ignore("CUDA OUT OF MEMORY")
+        raise Ignore(e)
+    finally:
+        if env.CUDA_DEVICE != "cpu":
+            torch.cuda.empty_cache()
+
     image_uris = image_save_local(images=images, task_id=task_id, info=kwargs)
-    return {
-        "prompt": kwargs.get("prompt"),
-        "image_uris": image_uris,
-    }
+    return image_uris
 
 
 def task_text2image(

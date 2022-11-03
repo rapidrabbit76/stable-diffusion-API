@@ -1,5 +1,9 @@
 import typing as T
+import gc
 import torch
+
+torch.backends.cudnn.benchmark = True
+
 import sys
 from random import randint
 from .models import (
@@ -30,6 +34,7 @@ class StableDiffusionManager:
         self.inpaint = build_inpaint_pipeline()
 
     @torch.inference_mode()
+    @torch.autocast("cuda" if env.CUDA_DEVICE != "cpu" else "cpu")
     def predict(
         self,
         task: _StableDiffusionTask,
@@ -45,10 +50,10 @@ class StableDiffusionManager:
         device = env.CUDA_DEVICE
 
         generator = self._get_generator(task, device)
-        with torch.autocast("cuda" if device != "cpu" else "cpu"):
-            images = pipeline(**task.dict(), generator=generator)
-            if device != "cpu":
-                torch.cuda.empty_cache()
+
+        images = pipeline(**task.dict(), generator=generator)
+        if device != "cpu":
+            torch.cuda.empty_cache()
 
         return images
 
