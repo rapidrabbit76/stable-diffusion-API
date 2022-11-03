@@ -1,7 +1,6 @@
 import uvicorn
 
 if __name__ == "__main__":
-    pass
     app = "app.server:app"
     uvicorn.run(
         app,
