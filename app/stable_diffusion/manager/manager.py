@@ -1,6 +1,8 @@
 from functools import lru_cache
 import typing as T
 import torch
+
+torch.backends.cudnn.benchmark = True
 import sys
 from random import randint
 from service_streamer import ThreadedStreamer

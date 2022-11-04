@@ -24,7 +24,7 @@ class Settings(
     MicroBatchSettings,
 ):
     HUGGINGFACE_TOKEN: str
-    IMAGESERVER_URL: str
+    IMAGESERVER_URL: str = 'http://localhost:3000/images'
     SAVE_DIR: str = "static"
 
     CORS_ALLOW_ORIGINS: T.List[str] = ["*"]
