@@ -6,6 +6,7 @@ from pydantic import BaseSettings
 
 class ModelSetting(BaseSettings):
     MODEL_ID: str = "CompVis/stable-diffusion-v1-4"
+    ENABLE_ATTENTION_SLICING: bool = True
 
 
 class DeviceSettings(BaseSettings):
@@ -23,8 +24,8 @@ class Settings(
     DeviceSettings,
     MicroBatchSettings,
 ):
-    HUGGINGFACE_TOKEN: str
-    IMAGESERVER_URL: str = 'http://localhost:3000/images'
+    HUGGINGFACE_TOKEN: str = "HUGGINGFACE_TOKEN"
+    IMAGESERVER_URL: str = "http://localhost:3000/images"
     SAVE_DIR: str = "static"
 
     CORS_ALLOW_ORIGINS: T.List[str] = ["*"]

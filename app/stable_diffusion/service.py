@@ -92,7 +92,7 @@ class StableDiffusionService:
             Image2ImageTask(
                 prompt=prompt,
                 negative_prompt=[negative_prompt] * len(prompt),
-                init_image=init_image,
+                image=init_image,
                 strength=strength,
                 num_inference_steps=num_inference_steps,
                 guidance_scale=guidance_scale,

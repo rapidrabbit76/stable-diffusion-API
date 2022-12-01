@@ -23,7 +23,7 @@ class Text2ImageTask(BaseModel):
 class Image2ImageTask(BaseModel):
     prompt: T.Union[str, T.List[str]] = Field(...)
     negative_prompt: T.Union[str, T.List[str]] = Field(...)
-    init_image: T.Any
+    image: T.Any
     strength: float = Field(..., ge=0.0, le=1.0)
     num_inference_steps: int = Field(..., gt=0)
     guidance_scale: float = Field(..., ge=0.0)
@@ -33,7 +33,7 @@ class Image2ImageTask(BaseModel):
 class InpaintTask(BaseModel):
     prompt: T.Union[str, T.List[str]] = Field(...)
     negative_prompt: T.Union[str, T.List[str]] = Field(...)
-    init_image: T.Any
+    image: T.Any
     mask_image: T.Any
     strength: float = Field(..., ge=0.0, le=1.0)
     num_inference_steps: int = Field(..., gt=0)

@@ -87,17 +87,18 @@ outputs:
 >> ./core/settings/settings.py
 ```
 
-| Name               | Default                       | Desc                                              |
-| ------------------ | ----------------------------- | ------------------------------------------------- |
-| MODEL_ID           | CompVis/stable-diffusion-v1-4 | tagger embedding model part                       |
-| CUDA_DEVICE        | "cpu"                         | target cuda device                                |
-| CUDA_DEVICES       | [0]                           | visible cuda device                               |
-| MB_BATCH_SIZE      | 1                             | Micro Batch: MAX Batch size                       |
-| MB_TIMEOUT         | 120                           | Micro Batch: timeout sec                          |
-| HUGGINGFACE_TOKEN  | None                          | huggingface access token                          |
-| IMAGESERVER_URL    | None                          | result image base url                             |
-| SAVE_DIR           | static                        | result image save dir                             |
-| CORS_ALLOW_ORIGINS | [*]                           | cross origin resource sharing setting for FastAPI |
+| Name                     | Default                       | Desc                                                                                                                                                                    |
+| ------------------------ | ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| MODEL_ID                 | CompVis/stable-diffusion-v1-4 | huggingface repo id or model path                                                                                                                                       |
+| ENABLE_ATTENTION_SLICING | True                          | [Enable sliced attention computation.](https://huggingface.co/docs/diffusers/api/pipelines/stable_diffusion#diffusers.StableDiffusionPipeline.enable_attention_slicing) |
+| CUDA_DEVICE              | "cuda"                        | target cuda device                                                                                                                                                      |
+| CUDA_DEVICES             | [0]                           | visible cuda device                                                                                                                                                     |
+| MB_BATCH_SIZE            | 1                             | Micro Batch: MAX Batch size                                                                                                                                             |
+| MB_TIMEOUT               | 120                           | Micro Batch: timeout sec                                                                                                                                                |
+| HUGGINGFACE_TOKEN        | None                          | huggingface access token                                                                                                                                                |
+| IMAGESERVER_URL          | None                          | result image base url                                                                                                                                                   |
+| SAVE_DIR                 | static                        | result image save dir                                                                                                                                                   |
+| CORS_ALLOW_ORIGINS       | [*]                           | cross origin resource sharing setting for FastAPI                                                                                                                       |
 
 # RUN from code (API)
 
@@ -117,6 +118,9 @@ python huggingface_model_download.py
 ## 3. update settings.py in ./core/settings/settings.py
 ```python
 # example
+class ModelSetting(BaseSettings):
+    MODEL_ID: str = "CompVis/stable-diffusion-v1-4" # huggingface repo id
+    ENABLE_ATTENTION_SLICING: bool = True
 ...
 class Settings(
     ...
@@ -127,13 +131,9 @@ class Settings(
     ...
 ```
 
-## 4. RUN API by uvicorn
+## 4. RUN API from code
 ```bash
-cd /REPO/ROOT/DIR/PATH
-python3 -m uvicorn app.server:app \
-    --host 0.0.0.0 \
-    --port 3000 \
-    --workers 1 
+bash docker/api/start.sh
 ```
 
 # RUN from code (frontend)
@@ -161,27 +161,19 @@ streamlit run inpaint.py
 docker-compose build
 ```
 
-## 2. downlaod and caching huggingface model
-```bash
-python huggingface_model_download.py
-# check stable-diffusion model in huggingface cache dir 
-[[ -d ~/.cache/huggingface/diffusers/models--CompVis--stable-diffusion-v1-4 ]] && echo "exist"
->> exist
-```
-
 ## 3. update docker-compose.yaml file in repo root
 ```yaml
 version: "3.7"
-
 services:
   api:
     ...
     volumes:
       # mount huggingface model cache dir path to container root user home dir
-      - /home/{USER NAME}/.cache/huggingface:/root/.cache/huggingface
+      - /model:/model  # if you load pretraind model 
       - ...
     environment:
       ...
+      MODEL_ID: "CompVis/stable-diffusion-v1-4" 
       HUGGINGFACE_TOKEN: {YOUR HUGGINGFACE ACCESS TOKEN}
       ...
 

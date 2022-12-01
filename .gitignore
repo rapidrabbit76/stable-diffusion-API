@@ -26,3 +26,6 @@ temp/
 # DEV
 debug.py
 *.ipynb
+
+static/
+lpw_stable_diffusion/
