@@ -2,8 +2,11 @@ fastapi[all]==0.80.0
 fastapi-restful==0.4.3
 fastapi-health==0.4.0
 service-streamer==0.1.2
+loguru==0.6.0  
+gunicorn==20.1.0
 pydantic==1.9.2
-diffusers==0.3.0
-transformers==4.19.2
+diffusers
+transformers
+accelerate
 scipy
 ftfy

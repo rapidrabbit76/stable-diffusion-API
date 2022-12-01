@@ -13,11 +13,12 @@ services:
     expose:
       - 3000
     volumes:
-      - /home/USERNAME/.cache/huggingface:/root/.cache/huggingface
+      - /home/{USERNAME}/.cache/huggingface:/root/.cache/huggingface
       - ./static:/app/static
     environment:
-      TZ: Asia/Seoul
+      MODEL_ID: "CompVis/stable-diffusion-v1-4"
       MB_BATCH_SIZE: 1
+
       CUDA_DEVICE: cuda
       HUGGINGFACE_TOKEN: ${TOKEN:-YOUR-HUGGINGFACE-ACCESS-TOKEN}
       IMAGESERVER_URL: http://localhost:3000/images
