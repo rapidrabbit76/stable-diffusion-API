@@ -27,5 +27,6 @@ temp/
 debug.py
 *.ipynb
 ckpt/
+
 static/
 lpw_stable_diffusion/

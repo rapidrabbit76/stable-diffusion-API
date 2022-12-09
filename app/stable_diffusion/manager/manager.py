@@ -15,7 +15,9 @@ from app.stable_diffusion.manager.schema import (
     Image2ImageTask,
 )
 from core.settings import get_settings
+
 from core.utils.convert_script import conver_ckpt_to_diff
+
 from functools import lru_cache
 
 env = get_settings()
@@ -41,6 +43,7 @@ def build_pipeline(repo: str, device: str, enable_attention_slicing: bool):
         revision="fp16",
         custom_pipeline="lpw_stable_diffusion",
     )
+
     pipe.scheduler = DPMSolverMultistepScheduler.from_config(pipe.scheduler.config)
     pipe.safety_checker = lambda images, clip_input: (images, False)
 
