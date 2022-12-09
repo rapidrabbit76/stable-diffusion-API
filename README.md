@@ -13,7 +13,21 @@ UNOFFICIAL, [Stable-Diffusion](https://github.com/CompVis/stable-diffusion) api 
 |   ![](./src/image/inpaint/0.png)   |   ![](./src/image/inpaint/0.png)   |
 |   ![](./src/image/inpaint/1.png)   |   ![](./src/image/inpaint/2.png)   |
 
+# Features
+- [x] long-prompt-weighting support
+- [x] text2image 
+- [x] image2image
+- [x] inpaints
+- [x] negative-prompt
+- [x] celery async task (check celery_task [branch](https://github.com/rapidrabbit76/stable-diffusion-API/tree/celery_task))
+- [x] original ```ckpt``` format support
+- [ ] object storage support 
+- [ ] stable-diffusion 2.0 support
+- [ ] token size checker
+- [ ] JAX/Flax pipeline 
+
 # Requirements
+
 
 ## API
 
@@ -40,6 +54,7 @@ streamlit-drawable-canvas==0.9.2
 
 
 # API
+
 
 ## /text2image
 create image from input prompt

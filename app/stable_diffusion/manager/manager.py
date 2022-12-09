@@ -1,3 +1,4 @@
+import os
 from functools import lru_cache
 import typing as T
 import torch
@@ -14,6 +15,9 @@ from app.stable_diffusion.manager.schema import (
     Image2ImageTask,
 )
 from core.settings import get_settings
+
+from core.utils.convert_script import conver_ckpt_to_diff
+
 from functools import lru_cache
 
 env = get_settings()
@@ -27,15 +31,20 @@ _StableDiffusionTask = T.Union[
 
 @lru_cache()
 def build_pipeline(repo: str, device: str, enable_attention_slicing: bool):
+
+    # convert ckpt to diffusers
+    if repo.lower().endswith(".ckpt") and os.path.exists(repo):
+        dump_path = repo[:-5]
+        repo = conver_ckpt_to_diff(ckpt_path=repo, dump_path=dump_path)
+
     pipe = DiffusionPipeline.from_pretrained(
         repo,
         torch_dtype=torch.float16,
         revision="fp16",
         custom_pipeline="lpw_stable_diffusion",
     )
-    pipe.scheduler = DPMSolverMultistepScheduler.from_config(
-        pipe.scheduler.config
-    )
+
+    pipe.scheduler = DPMSolverMultistepScheduler.from_config(pipe.scheduler.config)
     pipe.safety_checker = lambda images, clip_input: (images, False)
 
     if enable_attention_slicing:
